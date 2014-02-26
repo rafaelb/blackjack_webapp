@@ -1,8 +1,34 @@
+
+
 <h4>Hi <%= session[:player_name] %>!</h4>
 
-Your cards are:
-<ul>
-<% session[:player_cards].each do |card| %>
-    <li><%= card.to_s %></li>
+
+<br/>
+<div class="well">
+  <h4>Dealer's cards:</h4>
+  <% session[:dealer_cards].each do |card| %>
+      <%= display_card(card)%>
+  <% end %>
+  <%= "Dealer Points: #{calculate_total(session[:dealer_cards])}" if !session[:hide_card] %>
+</div>
+<br/>
+
+<br/>
+<div class="well">
+  <h4>Your cards are:</h4>
+  <% session[:player_cards].each do |card| %>
+      <%= display_card(card)%>
+  <% end %>
+</div>
+<br/>
+Your points:
+<%= calculate_total(session[:player_cards]) %>
+<br/>
+<% if @display_buttons %>
+    <form id="hit_form" action="/hit" method="post">
+      <input type="submit" value="Hit" class="btn btn-success">
+    </form>
+    <form id="stay_form" action="/stay" method="post">
+      <input type="submit" value="Stay" class="btn btn-warning">
+    </form>
 <% end %>
-</ul>

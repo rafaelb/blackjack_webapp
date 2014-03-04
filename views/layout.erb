@@ -4,6 +4,8 @@
   <title>My First App</title>
   <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
   <link rel="stylesheet" href="/application.css">
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script src="/application.js"></script>
 </head>
 <body style="padding-top: 50px;">
 
@@ -11,20 +13,21 @@
   <div class="navbar-inner">
     <div class="container">
       <ul class="nav">
-        <li><a href="/new_player">New Game</a></li>
+        <li><a href="/new_player">New Player</a></li>
       </ul>
+      <% if session[:player_name] %>
+      <p class="navbar-text pull-right">
+        <%= session[:player_name] %> Credits: <%= session[:player_credit] %>
+      </p>
+      <% end %>
     </div>
   </div>
 </div>
-
 <div class="container">
   <%if @error %>
       <div class="alert alert-error"><%=@error%></div>
   <% end %>
-  <% if @success %>
-      <div class="alert alert-success"><%=@success%></div>
-  <% end %>
-  <%= yield %>
+<%= yield %>
 </div>
 </body>
 </html>

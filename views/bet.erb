@@ -1,0 +1,7 @@
+<h1>Current credit: <%= session[:player_credit] %></h1>
+
+<form action="/set_bet" method="post">
+  Bet: <input type="number" name="bet"/>
+  <br/>
+  <input type="submit" class="btn"/>
+</form>

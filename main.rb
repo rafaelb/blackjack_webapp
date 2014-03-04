@@ -4,7 +4,9 @@ require 'pry'
 
 set :sessions, true
 
-
+BLACKJACK_AMOUNT = 21
+DEALER_MIN_AMOUNT = 17
+INITIAL_CREDIT = 500
 
 helpers do
   def calculate_total(cards)
@@ -23,7 +25,7 @@ helpers do
 
     #correct for Aces
     arr.select{|e| e == "A"}.count.times do
-      total -= 10 if total > 21
+      total -= 10 if total > BLACKJACK_AMOUNT
     end
 
     total
@@ -67,6 +69,22 @@ helpers do
     str[/[a-zA-Z]+/]  == str
   end
 
+  def win
+    @success = "You win!!!"
+    @display_buttons = false
+    session[:hide_card] = false
+    session[:player_credit] += 2*(session[:bet])
+    @finish = true
+    session[:bet] = false
+  end
+
+  def lose
+    @error = "You lose!!!"
+    @display_buttons = false
+    session[:hide_card] = false
+    @finish = true
+    session[:bet] = false
+  end
 end
 before do
   @display_buttons = true
@@ -91,81 +109,87 @@ post '/set_name' do
     halt erb(:set_name)
   end
   session[:player_name] = params[:player_name]
-  session[:deck] = create_deck
-  session[:player_cards] = []
-  session[:dealer_cards] = []
-  session[:player_cards] << session[:deck].pop
-  session[:player_cards] << session[:deck].pop
-  session[:dealer_cards] << session[:deck].pop
-  session[:dealer_cards] << session[:deck].pop
-  session[:hide_card] = true
+  session[:player_credit] = INITIAL_CREDIT
   redirect '/game'
 end
 
+post '/set_bet' do
+  if params[:bet].to_i > session[:player_credit]
+    @error = "Not enough credits"
+    halt erb(:bet)
+  elsif params[:bet].to_i < 1
+    @error = "Bet must be at least 1"
+    halt erb(:bet)
+  end
+  session[:bet] = params[:bet].to_i
+  session[:player_credit] -= session[:bet]
+  redirect '/game'
+
+end
 get '/game' do
-  if session[:player_name]
-    if calculate_total(session[:dealer_cards]) == 21
-      @error = "Dealer has hit blackjack! YOU LOSE!!!"
-      @display_buttons = false
-    elsif calculate_total(session[:dealer_cards]) > 21
-      @success = "Dealer has busted! YOU WIN!!!"
-      @display_buttons = false
+
+  if session[:bet]
+    session[:deck] = create_deck
+    session[:player_cards] = []
+    session[:dealer_cards] = []
+    session[:player_cards] << session[:deck].pop
+    session[:player_cards] << session[:deck].pop
+    session[:dealer_cards] << session[:deck].pop
+    session[:dealer_cards] << session[:deck].pop
+    session[:hide_card] = true
+    if calculate_total(session[:dealer_cards]) == BLACKJACK_AMOUNT
+      lose
+    elsif calculate_total(session[:dealer_cards]) > BLACKJACK_AMOUNT
+      win
     end
     erb :game
   else
-    erb :set_name
+    erb :bet
   end
 end
 
-get '/dealer_hit' do
+post '/dealer_hit' do
   session[:dealer_cards] << session[:deck].pop
-  if calculate_total(session[:dealer_cards]) == 21
-    @error = "Dealer has hit blackjack! YOU LOSE!!!"
-    @display_buttons = false
-    session[:hide_card] = false
-  elsif calculate_total(session[:dealer_cards]) > 21
-    @success = "Dealer has busted! YOU WIN!!!"
-    @display_buttons = false
-    session[:hide_card] = false
+  if calculate_total(session[:dealer_cards]) == BLACKJACK_AMOUNT
+    lose
+  elsif calculate_total(session[:dealer_cards]) > BLACKJACK_AMOUNT
+    win
+  else
+    redirect '/dealer_turn'
   end
   erb :game
 end
 
 get '/dealer_stay' do
   if calculate_total(session[:dealer_cards]) < calculate_total(session[:player_cards])
-    @success = "You have more points than the dealer. YOU WIN!!!"
-    session[:hide_card] = false
+    win
   else
-    @error = "Dealer has more points. YOU LOSE!!!"
-    session[:hide_card] = false
+    lose
   end
-  @display_buttons = false
   erb :game
 end
 
 get '/dealer_turn' do
-  redirect calculate_total(session[:dealer_cards]) < 17 ? '/dealer_hit' : '/dealer_stay'
+  if calculate_total(session[:dealer_cards]) < DEALER_MIN_AMOUNT
+    @dealer_hit = true
+    erb :game
+  else
+    redirect '/dealer_stay'
+  end
 end
 
 post '/hit' do
   session[:player_cards] << session[:deck].pop
-  if calculate_total(session[:player_cards]) == 21
-    @success = "You have hit BLACKJACK"
-    @display_buttons = false
-    session[:hide_card] = false
-    erb :game
-  elsif calculate_total(session[:player_cards]) > 21
-    @error = "You have lost!!!"
-    @display_buttons = false
-    session[:hide_card] = false
-    erb :game
-  else
-    redirect '/dealer_turn'
+  if calculate_total(session[:player_cards]) == BLACKJACK_AMOUNT
+    win
+
+  elsif calculate_total(session[:player_cards]) > BLACKJACK_AMOUNT
+    lose
   end
+  erb :game, layout: false
 end
 
 post '/stay' do
-  @success = "You have chosen to stay!"
   session[:hide_card] = false
   redirect '/dealer_turn'
 end

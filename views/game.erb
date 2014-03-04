@@ -1,20 +1,43 @@
+<div id="game">
 
+
+    <%if @error %>
+        <div class="alert alert-error"><%=@error%></div>
+    <% end %>
+    <% if @success %>
+        <div class="alert alert-success"><%=@success%></div>
+    <% end %>
+
+  <% if @finish %>
+    <% if session[:player_credit] == 0 %>
+      <div class="alert alert-danger">OUT OF MONEY!!!</div>
+          <% else %>
+          <a href="/game" class="btn btn-primary">PLAY AGAIN?</a>
+      <% end %>
+      <% end %>
 
 <h4>Hi <%= session[:player_name] %>!</h4>
 
 
 <br/>
-<div class="well">
+<div class="well" id="dealer_area">
   <h4>Dealer's cards:</h4>
   <% session[:dealer_cards].each do |card| %>
       <%= display_card(card)%>
   <% end %>
+  <% if @dealer_hit %>
+      <form id="dealer_form" action="/dealer_hit" method="post">
+        <input type="submit" value="Show Dealer's next card" class="btn btn-primary">
+      </form>
+  <% end %>
+
   <%= "Dealer Points: #{calculate_total(session[:dealer_cards])}" if !session[:hide_card] %>
 </div>
 <br/>
 
 <br/>
-<div class="well">
+<div class="well" id="player_area">
+  <a id="player_color" href="#">Change player colour</a>
   <h4>Your cards are:</h4>
   <% session[:player_cards].each do |card| %>
       <%= display_card(card)%>
@@ -32,3 +55,4 @@ Your points:
       <input type="submit" value="Stay" class="btn btn-warning">
     </form>
 <% end %>
+</div>
